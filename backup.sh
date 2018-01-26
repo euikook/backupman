@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Single backup using rsync+ssh
+
 # m h  dom mon dow   command
 # 00 04 * * * /home/euikook/bin/backup.sh -h sunrise -e ssh /home/repos /home/backup/101/home/repos
 # 00 05 * * * /home/euikook/bin/backup.sh -h sunrise -e ssh /home/www /home/backup/101/home/www

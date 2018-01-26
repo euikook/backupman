@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+# Incremental backup using rsync+ssh
+
 # m h  dom mon dow   command
-# 00 04 * * * /home/euikook/bin/backup.sh -h sunrise -e ssh /home/repos /home/backup/101/home/repos
-# 00 05 * * * /home/euikook/bin/backup.sh -h sunrise -e ssh /home/www /home/backup/101/home/www
-# 00 06 * * * /home/euikook/bin/backup.sh -h sunrise -e ssh /home/git /home/backup/101/home/git
+# 00 04 * * * /home/euikook/bin/backup-inc.sh -h sunrise -e ssh /home/repos /home/backup/101/home/repos
+# 00 05 * * * /home/euikook/bin/backup-inc.sh -h sunrise -e ssh /home/www /home/backup/101/home/www
+# 00 06 * * * /home/euikook/bin/backup-inc.sh -h sunrise -e ssh /home/git /home/backup/101/home/git
 
 # USER VARIABLES
 DAYS=7						# The number of days after which old backups will be deleted
