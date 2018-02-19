@@ -108,12 +108,15 @@ else
     BKUP_LOG="$LOG_DIR/$BKUP_NAME-$NOW.log"
 fi
 
-SYNC_EXCLUDES="$RSYNC $RSYNC_OPTS --delete --include="$EXCLUDES" --exclude="*" \
-                \"$BKUP_SRC\"   \
-                \"$BKUP_DST\""
+RSYNC_EXCL_OPTS="--delete --include=\"$EXCLUDES\" --exclude=\"*\""
+
+RSYNC_EXCL="$RSYNC $RSYNC_OPTS     \
+                   $SYNC_EXCL_OPTS \
+                   \"$BKUP_SRC\"   \
+                   \"$BKUP_DST\""
 
 # Sync excludes file first.
-eval $SYNC_EXCLUDES 2>&1 > /dev/null
+eval $RSYNC_EXCL 2>&1 > /dev/null
 
 [ -f "$DST_DIR/$EXCLUDES" ] && {
     RSYNC_OPTS+=" --exclude-from \"$DST_DIR/$EXCLUDES\""
@@ -125,12 +128,12 @@ eval $SYNC_EXCLUDES 2>&1 > /dev/null
 
 $DATE > "$BKUP_LOG"
 
-BKUP_CMD="$RSYNC $RSYNC_OPTS \
-                \"$BKUP_SRC\"   \
-                \"$CURRENT\""
+RSYNC_BKUP="$RSYNC $RSYNC_OPTS \
+                   \"$BKUP_SRC\"   \
+                   \"$CURRENT\""
 
-$ECHO $BKUP_CMD >> "$BKUP_LOG"
-eval $BKUP_CMD 2>&1 >> "$BKUP_LOG" || {
+$ECHO $RSYNC_BKUP >> "$BKUP_LOG"
+eval $RSYNC_BKUP 2>&1 >> "$BKUP_LOG" || {
     $ECHOERR "Can't backup from \"$BKUP_SRC\"."
     $ECHOERR "Please see more details \"$BKUP_LOG\"."
     exit -1
