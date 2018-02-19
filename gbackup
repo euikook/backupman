@@ -15,9 +15,11 @@
 
 # VARIABLES
 DURATIONS=0	# Number of days which keep old backup.
+EXCLUDES=".gbackup.excludes"
 
 # EXECUTABLES
 SSH=/usr/bin/ssh
+SCP=/usr/bin/scp
 FIND=/usr/bin/find
 DATE=/bin/date
 MKDIR=/bin/mkdir
@@ -38,16 +40,16 @@ TODAY=`$DATE "+%Y-%m-%d"`
 INCBKUP=0
 
 while [ $# -gt 0 ]; do
-	case "$1" in 
-		-h | --host) RM_HOST=$2; shift;;
-		-e | --ssh ) RM_OPTS=$2; shift;;
-		-i | --incremental ) INCBKUP=1; ;;
+    case "$1" in 
+        -h | --host) RM_HOST=$2; shift;;
+        -e | --ssh ) RM_OPTS=$2; shift;;
+        -i | --incremental ) INCBKUP=1; ;;
         -d | --delete-old-backup ) DURATIONS=$2; shift;;
-		-*) $ECHOERR >&2 "usage $0 [-h HOST] [-i] [-e SSH_OPTION] <SRC DIR> <DST DIR>"
-		    exit 1;;
-		 *) break;; # terminate while loop 
-	esac
-	shift;
+        -*) $ECHOERR >&2 "usage $0 [-h HOST] [-i] [-e SSH_OPTION] <SRC DIR> <DST DIR>"
+            exit 1;;
+        *) break;; # terminate while loop 
+    esac
+    shift;
 done
 
 SRC_DIR=$1
@@ -76,13 +78,8 @@ BKUP_DST=$DST_DIR
 
 cd "$BKUP_DST"
 
-[ -f "$DST_DIR/.backup.excludes" ] && {
-    EXCLUDES="--exclude-from \"$DST_DIR/.backup.excludes\""
-}
-
-RSYNC_OPTS="-apvz         \
-            $EXCLUDES     \
-            $SSH_OPTS     \
+RSYNC_OPTS="-apvz          \
+            $SSH_OPTS      \
             --numeric-ids"
 
 if [ "$INCBKUP" -eq "1" ]; then
@@ -110,6 +107,17 @@ else
     LOG_DIR="$BKUP_DST/../Log"
     BKUP_LOG="$LOG_DIR/$BKUP_NAME-$NOW.log"
 fi
+
+SYNC_EXCLUDES="$RSYNC $RSYNC_OPTS --delete --include="$EXCLUDES" --exclude="*" \
+                \"$BKUP_SRC\"   \
+                \"$BKUP_DST\""
+
+# Sync excludes file first.
+eval $SYNC_EXCLUDES 2>&1 > /dev/null
+
+[ -f "$DST_DIR/$EXCLUDES" ] && {
+    RSYNC_OPTS+=" --exclude-from \"$DST_DIR/$EXCLUDES\""
+}
 
 [ -d "$LOG_DIR" ] || {
     $MKDIR -p "$LOG_DIR"
