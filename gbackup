@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+# backup script using rsync+ssh
+
+# m h  dom mon dow   command
+# 00 04 * * * ~/bin/gbackup -h s01 -e ssh /home /home/backup/s01/home
+# 00 05 * * * ~/bin/gbackup -h s02 -e ssh /home /home/backup/s02/home
+# 00 06 * * * ~/bin/gbackup -h s03 -e ssh /home /home/backup/s03/home
+
+# USER VARIABLES
+DAYS=0						                # The number of days after which old backups will be deleted
+
+# PATH VARIABLES
+SH=/bin/sh					                # Location of the bash bin in the production server!!!!
+CP=/bin/cp;                                 # Location of the cp bin
+FIND=/usr/bin/find;                         # Location of the find bin
+ECHO=/bin/echo;                             # Location of the echo bin
+MK=/bin/mkdir;                              # Location of the mk bin
+SSH=/usr/bin/ssh;                           # Location of the ssh bin
+DATE=/bin/date;                             # Location of the date bin
+RM=/bin/rm;                                 # Location of the rm bin
+GREP=/bin/grep;                             # Location of the grep bin
+MYSQL=/usr/bin/mysql;                       # Location of the mysql bin
+MYSQLDUMP=/usr/bin/mysqldump;               # Location of the mysql_dump bin
+RSYNC=/usr/bin/rsync;                       # Location of the rsync bin
+REMOTERSYNC="/usr/bin/sudo /usr/bin/rsync";	# Location of the rsync bin
+TOUCH=/bin/touch;                           # Location of the touch bin
+DELETE=/bin/echo;
+#DELETE="rm -rf";
+SLINK="ln -s"
+
+TODAY=`$DATE "+%Y-%m-%d"`
+INCBKUP=0
+
+while [ $# -gt 0 ]; do
+	case "$1" in 
+		-h | --host) RM_HOST=$2; shift;;
+		-e | --ssh ) RM_OPTS=$2; shift;;
+		-i | --incremental ) INCBKUP=1; ;;
+        -d | --delete-old-backup ) DAYS=$2; shift;;
+		-*) echo >&2 "usage $0 [-h HOST] [-i] [-e SSH_OPTION] <SRC DIR> <DST DIR>"
+		    exit 1;;
+		 *) break;; # terminate while loop 
+	esac
+	shift;
+done
+
+SRC_DIR=$1
+DST_DIR=$2
+
+[[ $DAYS =~ ^-?[0-9]+$ ]] || echo "'$DAYS' is not integer" && exit 0
+
+if [ $RM_HOST = "" ]; then
+    SSH_OPTS=""
+	BKUP_SRC=$SRC_DIR
+else
+    SSH_OPTS="-e \"$RM_OPTS\""
+    BKUP_SRC="$(echo "$RM_HOST:$SRC_DIR/" | sed 's/ /\\ /g')"
+fi
+
+BKUP_DST=$DST_DIR
+
+
+if [ ! -d "$BKUP_DST" ]; then
+	echo "No such file or directory '$BKUP_DST'"
+	exit 1;
+fi
+
+cd "$BKUP_DST"
+
+if [ -f "$DST_DIR/.backup.excludes" ]; then
+    EXCLUDES="--exclude-from \"$DST_DIR/.backup.excludes\""
+fi
+
+RSYNC_OPTS="-apvz         \
+            $EXCLUDES     \
+            $SSH_OPTS     \
+            --numeric-ids"
+
+if [ "$INCBKUP" -eq "1" ]; then
+    LASTEST=$BKUP_DST/lastest
+    UUID=`uuid -v 4`
+
+    CURRENT="$BKUP_DST/$TODAY/$UUID"
+
+    if [ -L "$LASTEST" ]; then
+        LINKDEST="--link-dest=\"$LASTEST\""
+    fi
+
+    RSYNC_OPTS+=" $LINKDEST"
+
+    LOG_DIR="$BKUP_DST/$TODAY"
+    BKUP_LOG=$LOG_DIR/$UUID.log
+
+else
+    CURRENT="$BKUP_DST"
+    RSYNC_OPTS+=" --delete          \
+                  --delete-excluded"
+
+    BKUP_NAME=`basename "$BKUP_DST"`
+
+    LOG_DIR="$BKUP_DST/../Log"
+    BKUP_LOG="$LOG_DIR/$BKUP_NAME-$NOW.log"
+fi
+
+if [ ! -d "$LOG_DIR" ]; then
+    $MK -p "$LOG_DIR"
+fi
+
+date > "$BKUP_LOG"
+
+BKUP_CMD="$RSYNC $RSYNC_OPTS \
+                \"$BKUP_SRC\"   \
+                \"$CURRENT\""
+
+echo $BKUP_CMD >> "$BKUP_LOG"
+eval $BKUP_CMD 2>&1 >> "$BKUP_LOG" || exit -1
+
+$TOUCH "$CURRENT"
+
+if [ "$INCBKUP" -eq "1" ]; then
+    $RM -f "$LASTEST"
+    $SLINK `realpath --relative-to="$BKUP_DST" "$CURRENT"` "$LASTEST"
+    $TOUCH "$LASTEST"
+
+    # REMOVE OLD BACKUPS
+    [ "$DAYS" -gt "0" ] && {
+        LIST=$( $FIND "$DST_DIR" -maxdepth 1 -type d -mtime +$DAYS )
+        for FILE in $LIST; do
+            $ECHO "DELETE OLD THAN $DAYS days: $FILE"
+            # UNCOMMENT BELOW LINE CAREFULLY!!
+            #$DELETE "$FILE"
+        done
+    }
+fi
+exit 0
