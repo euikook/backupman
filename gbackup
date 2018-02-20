@@ -80,6 +80,7 @@ cd "$BKUP_DST"
 
 RSYNC_OPTS="-apvz          \
             $SSH_OPTS      \
+            --rsync-path=\"$REMOTERSYNC\" \
             --numeric-ids"
 
 if [ "$INCBKUP" -eq "1" ]; then
@@ -105,15 +106,18 @@ else
     BKUP_NAME=`basename "$BKUP_DST"`
 
     LOG_DIR="$BKUP_DST/../Log"
-    BKUP_LOG="$LOG_DIR/$BKUP_NAME-$NOW.log"
+    BKUP_LOG="$LOG_DIR/$BKUP_NAME-$TODAY.log"
 fi
 
 RSYNC_EXCL_OPTS="--delete --include=\"$EXCLUDES\" --exclude=\"*\""
 
 RSYNC_EXCL="$RSYNC $RSYNC_OPTS     \
-                   $SYNC_EXCL_OPTS \
+                   $RSYNC_EXCL_OPTS \
                    \"$BKUP_SRC\"   \
                    \"$BKUP_DST\""
+
+
+#echo $RSYNC_EXCL
 
 # Sync excludes file first.
 eval $RSYNC_EXCL 2>&1 > /dev/null
@@ -131,6 +135,8 @@ $DATE > "$BKUP_LOG"
 RSYNC_BKUP="$RSYNC $RSYNC_OPTS \
                    \"$BKUP_SRC\"   \
                    \"$CURRENT\""
+
+#echo $RSYNC_BKUP
 
 $ECHO $RSYNC_BKUP >> "$BKUP_LOG"
 eval $RSYNC_BKUP 2>&1 >> "$BKUP_LOG" || {
