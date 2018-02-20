@@ -2,13 +2,15 @@
 
 ### Installation
 ```
-cp gbackup ~/bin
+got clone https://github.com/grepos/backupman.git
+mkdir -p ~/bin
+cp backupman/backupman ~/bin
 ```
 
 ## Usages
 
 ```
-gbackup [-i] [-d DAYS] -e [SSH-OPTS] <BKUP-SRC> <BKUP-DST> 
+backupman [-d DAYS] -e [SSH-OPTS] <BKUP-SRC> <BKUP-DST> 
 ```
 
 
