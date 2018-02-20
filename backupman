@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-#Title           : gbackup
+#Title           : backupman
 #Description     : Backup script using rsync+ssh
 #Author          : E.K. KIM (euikook@gmail.com)
 #Date            : 2018-02-19
 #Version         : 1.0
-#Usage           : gbackup [-i] [-d DAYS] [-h REMOTE-HOST]  [-e SSH-OPTS] <SRC-DIR> <DST-DIR>
+#Usage           : backupman [-i] [-d DAYS] [-h REMOTE-HOST]  [-e SSH-OPTS] <SRC-DIR> <DST-DIR>
 #Notes           : None
 
 # m h  dom mon dow   command
-# 00 04 * * * ~/bin/gbackup -h s01 -e ssh /home /home/backup/s01/home
-# 00 05 * * * ~/bin/gbackup -h s02 -e ssh /home /home/backup/s02/home
-# 00 06 * * * ~/bin/gbackup -h s03 -e ssh /home /home/backup/s03/home
+# 00 04 * * * ~/bin/backupman -h s01 -e ssh /home /home/backup/s01/home
+# 00 05 * * * ~/bin/backupman -h s02 -e ssh /home /home/backup/s02/home
+# 00 06 * * * ~/bin/backupman -h s03 -e ssh /home /home/backup/s03/home
 
 # VARIABLES
 DURATIONS=0	# Number of days which keep old backup.
-EXCLUDES=".gbackup.excludes"
+EXCLUDES=".backupman.excludes"
 
 # EXECUTABLES
 SSH=/usr/bin/ssh
