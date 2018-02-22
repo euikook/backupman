@@ -28,9 +28,10 @@ DATE=/bin/date
 MKDIR=/bin/mkdir
 TOUCH=/bin/touch
 SLINK="ln -s"
-
 ECHO=/bin/echo
-ECHOERR=">&2 $ECHO"
+ERR=>&2
+
+ECHOERR="$ERR $ECHO"
 
 DELETE=/bin/rm
 DELETEF="/bin/rm -f"
